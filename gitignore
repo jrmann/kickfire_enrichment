@@ -1,0 +1,9 @@
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# SQLite
+*.db
+
+__pycache_/
+
+credentials.py
