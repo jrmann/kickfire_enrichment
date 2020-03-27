@@ -112,8 +112,8 @@ try:
         if account is None and limiter <= 20:
             domain = item['EmailDomain']
             print(item['Name'])
-            kickfire = requests.get(f'https://api.kickfire.com/v3/company:\
-            (employees,revenue)?website={domain}&key={api_key}').json()
+            kickfire = requests.get('https://api.kickfire.com/v3/company:'
+			f'(employees,revenue)?website={domain}&key={api_key}').json()
             if kickfire['status'] == 'success':
                 print('Good Domain')
                 employees = kickfire['data'][0]['employees']
@@ -146,9 +146,7 @@ try:
                 session.add(listing)
                 session.commit()
                 
-                limiter += 1
-                print(limiter)
-                
+                limiter += 1      
                 continue
 
             else:
