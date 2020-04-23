@@ -13,18 +13,18 @@ import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
-sf = Salesforce(username=credentials.login['username'],password=credentials.login['password'],
+sf = Salesforce(username=credentials.login['username'], password=credentials.login['password'],
                 security_token=credentials.login['security_token'])
 
 results = []
-main = sf.query_all('''SELECT Id, Name, Email_Domain__c                            
-             FROM Account 
-             WHERE (Kickfire_Num_Employees__c='' OR Kickfire_Revenue__c='')                                  
+main = sf.query_all('''SELECT Id, Name, Email_Domain__c
+             FROM Account
+             WHERE (Kickfire_Num_Employees__c='' OR Kickfire_Revenue__c='')
              AND Email_Domain__c != ''
              ORDER BY Name ASC''')
 results.append(main['records'])
 
-records = [dict(Name=i['Name'], Id=i['Id'], EmailDomain=i['Email_Domain__c'],\
+records = [dict(Name=i['Name'], Id=i['Id'], EmailDomain=i['Email_Domain__c'],
                 CreatedDate=datetime.datetime.today().replace(microsecond=0)) for i in results[0]]
 df = pd.DataFrame(records)
 
@@ -41,13 +41,14 @@ class Account(Base):
     created_date = Column(DateTime)
     employees = Column(String)
     revenue = Column(String)
-    
+
+
 Base.metadata.create_all(engine)
 
 Session = sessionmaker(bind=engine)
 session = Session()
 
-#Create the initial databse so we don't re-run ~5k accounts through the API
+# Create the initial databse so we don't re-run ~5k accounts through the API
 # for item in records:
 #     listing = Account(
 #     id=item['Id'],
@@ -59,6 +60,7 @@ session = Session()
 #     )
 #     session.add(listing)
 #     session.commit()
+
 
 def notify_error(error):
     username = credentials.email_login['username']
@@ -81,7 +83,8 @@ def notify_error(error):
         print('Failure Email sent!')
     except:
         print('Something went wrong with failure notification')
-        
+
+
 def notify_success(name, id, domain):
     username = credentials.email_login['username']
     password = credentials.email_login['password']
@@ -104,6 +107,7 @@ def notify_success(name, id, domain):
     except:
         print('Something went wrong with success notification')
 
+
 api_key = credentials.kickfire['api_key']
 limiter = 0
 try:
@@ -113,21 +117,21 @@ try:
             domain = item['EmailDomain']
             print(item['Name'])
             kickfire = requests.get('https://api.kickfire.com/v3/company:'
-			f'(employees,revenue)?website={domain}&key={api_key}').json()
+                                    f'(employees,revenue)?website={domain}&key={api_key}').json()
             if kickfire['status'] == 'success':
                 print('Good Domain')
                 employees = kickfire['data'][0]['employees']
                 revenue = kickfire['data'][0]['revenue']
-                sf.Account.update(item['Id'],{'Kickfire_Num_Employees__c':f'{employees}',\
-                                              'Kickfire_Revenue__c':f'{revenue}'})
-                
+                sf.Account.update(item['Id'], {'Kickfire_Num_Employees__c': f'{employees}',
+                                               'Kickfire_Revenue__c': f'{revenue}'})
+
                 listing = Account(
-                id=item['Id'],
-                name=item['Name'],
-                email_domain=item['EmailDomain'],
-                created_date=item['CreatedDate'],
-                employees=employees,
-                revenue=revenue
+                    id=item['Id'],
+                    name=item['Name'],
+                    email_domain=item['EmailDomain'],
+                    created_date=item['CreatedDate'],
+                    employees=employees,
+                    revenue=revenue
                 )
                 session.add(listing)
                 session.commit()
@@ -137,20 +141,20 @@ try:
 
             elif kickfire['status'] == 'not found':
                 print('Bad Domain')
-				sf.Account.update(item['Id'],{'Kickfire_Num_Employees__c':'Not Found',\
-                                              'Kickfire_Revenue__c':'Not Found'})
+                sf.Account.update(item['Id'], {
+                                  'Kickfire_Num_Employees__c': 'Not Found', 'Kickfire_Revenue__c': 'Not Found'})
                 listing = Account(
-                id=item['Id'],
-                name=item['Name'],
-                email_domain=item['EmailDomain'],
-                created_date=item['CreatedDate'],
-				employees='Not Found',
-				revenue='Not Found'
+                    id=item['Id'],
+                    name=item['Name'],
+                    email_domain=item['EmailDomain'],
+                    created_date=item['CreatedDate'],
+                    employees='Not Found',
+                    revenue='Not Found',
                 )
                 session.add(listing)
                 session.commit()
-                
-                limiter += 1      
+
+                limiter += 1
                 continue
 
             else:
@@ -159,4 +163,4 @@ try:
 except Exception as e:
     notify_error(e)
 
-print('Complete')   
+print('Complete')
