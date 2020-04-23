@@ -137,11 +137,15 @@ try:
 
             elif kickfire['status'] == 'not found':
                 print('Bad Domain')
+				sf.Account.update(item['Id'],{'Kickfire_Num_Employees__c':'Not Found',\
+                                              'Kickfire_Revenue__c':'Not Found'})
                 listing = Account(
                 id=item['Id'],
                 name=item['Name'],
                 email_domain=item['EmailDomain'],
-                created_date=item['CreatedDate']
+                created_date=item['CreatedDate'],
+				employees='Not Found',
+				revenue='Not Found'
                 )
                 session.add(listing)
                 session.commit()
@@ -153,4 +157,6 @@ try:
                 break
 
 except Exception as e:
-    notify_error(e)        
+    notify_error(e)
+
+print('Complete')   
